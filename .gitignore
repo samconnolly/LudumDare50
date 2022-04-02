@@ -21,6 +21,8 @@
 
 # Visual Studio cache directory
 .vs/
+.vscode/
+.collabignore
 
 # Gradle cache directory
 .gradle/
