@@ -204,7 +204,6 @@ public class MenuManager : MonoBehaviour
     public void StartGame()
     {
         GameHelper.started = true;
-        GameHelper.crystals = 0;
         menuFading = true;
         foreach (Button button in menuButtons)
         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Tilemaps;
 
 public static class GameHelper
 {
@@ -12,7 +13,24 @@ public static class GameHelper
     public static float soundVolume = 1;
     public static bool victorious = false;
     public static bool started = false;
-    public static int crystals = 0;
+    
+    public static int mapSize = 16;
+
+    public static Tilemap GroundTileMap {
+        get {return gameManager.groundTileMap;}
+    }
+    public static Tilemap TopTileMap {
+        get {return gameManager.topTileMap;}
+    }
+    public static ThornGrowth Thorns {
+        get {return gameManager.topTileMap.GetComponent<ThornGrowth>();}
+    }
+    public static Tilemap MinimapTileMap {
+        get {return gameManager.minimapTileMap;}
+    }
+    public static TileBase ThornTile {
+        get {return gameManager.thornTile;}
+    }
 
     public static void QuitGame()
     {
@@ -28,15 +46,11 @@ public static class GameHelper
     {
         SceneManager.LoadScene("Menu");
     }
-  
-    public static void LoadTreeScene()
+
+    public static void LoseGame()
     {
-        started = true;
-        if (crystals >= 5)
-        {
-            victorious = true;
-        }
-        SceneManager.LoadScene("Menu");
+        gameManager.LoseGame();
     }
+
 
 }

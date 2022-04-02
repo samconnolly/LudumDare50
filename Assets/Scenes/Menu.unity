@@ -1082,7 +1082,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Shadow of the Elm
+  m_Text: A Thorny Issue
 --- !u!222 &307614938
 CanvasRenderer:
   m_ObjectHideFlags: 0

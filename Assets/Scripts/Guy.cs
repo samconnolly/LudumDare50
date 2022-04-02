@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 enum AnimType
 {
@@ -15,6 +16,11 @@ public class Guy : MonoBehaviour
     public Sprite[] standSprites;
     public Sprite[] walkSprites;
     public Sprite[] attackSprites;
+    public float reach;
+    public float chopTime;
+    public float thornDamageTime;
+    public int thornDamage;
+    public HealthBar healthBar;
     
 
     private Vector3 moveDir;
@@ -31,8 +37,15 @@ public class Guy : MonoBehaviour
     private CircleCollider2D circleCollider;
 
     private Dictionary<AnimType, AnimType> animTransitions = new Dictionary<AnimType, AnimType>();
+    private bool moving;
+    private bool inThorns;
+    private float thornTimer;
 
     private bool frozen;
+    private Vector3Int chopTarget;
+    private float chopTimer;
+    private bool chopping;
+
 
     // Start is called before the first frame update
     void Start()
@@ -52,6 +65,48 @@ public class Guy : MonoBehaviour
         UpdateMovement();
         UpdateAttack();
         UpdateAnimation();
+        UpdateChopping();
+        UpdateThornDamage();
+    }
+    void UpdateChopping()
+    {
+        
+        if (Input.GetKey(KeyCode.Space) & ! moving){
+            if (chopping){
+                chopTimer += Time.deltaTime;
+                if (chopTimer >= chopTime) {
+                    GameHelper.TopTileMap.GetComponent<ThornGrowth>().RemoveThorns(chopTarget);
+                    chopping = false;
+                    chopTimer = 0;
+                    Debug.Log("finished chopping");
+                }
+            }
+        }
+        else if (chopping) {
+            Debug.Log("abandoned chopping");
+            chopping = false;
+            chopTimer = 0;
+        }
+    }
+    void UpdateThornDamage()
+    {
+        bool thorny = GameHelper.Thorns.IsThorny(transform.position);
+        if (thorny) {
+            if (! inThorns) {
+                inThorns = true;
+                thornTimer = thornDamageTime;
+            }
+
+            thornTimer += Time.deltaTime;
+            if (thornTimer >= thornDamageTime) {
+                TakeDamage(thornDamage);
+                thornTimer = 0;
+            }
+        }
+        else {
+            inThorns = false;
+            thornTimer = 0;
+        }
     }
 
     void UpdateAnimation()
@@ -103,6 +158,13 @@ public class Guy : MonoBehaviour
             moveDir += new Vector3(1, 0, 0);
         }
 
+        // TODO ANIMTAION
+        if (moveDir.magnitude > 0){
+            moving = true;
+        }
+        else {
+            moving = false;
+        }
         moveDir.Normalize();
 
         faceDir = new Vector3(0, 0, 0);
@@ -124,7 +186,8 @@ public class Guy : MonoBehaviour
         }
 
         if (! frozen) {
-            transform.position += moveDir * moveSpeed * 0.01f;  // scaling to make 1 reasonable
+            float speedMultiplier = GameHelper.Thorns.SpeedMultiplier(transform.position);
+            transform.position += moveDir * moveSpeed * speedMultiplier * 0.01f;  // scaling to make 1 reasonable
             transform.rotation = rot;
         }
     }
@@ -144,14 +207,33 @@ public class Guy : MonoBehaviour
         Collider2D[] circleOverlaps = new Collider2D[5];
         int count = circleCollider.OverlapCollider(contactFilter, circleOverlaps);
         
+        // attack
         if (count > 0) {
             foreach (Collider2D collider in circleOverlaps) {
                 if (collider != null) {
+                    Debug.Log(collider.gameObject);
                     if (collider.tag == "Thorn") {
-                        collider.GetComponent<Thorn>().Kill();
+                        // collider.GetComponent<Thorn>().Kill();
                     }
                 }
             }
+        }
+
+        // chop        
+        Vector2 fw_reach = transform.position + transform.up * reach;
+        if (GameHelper.Thorns.IsThorny(fw_reach)) {
+            Debug.Log("Start chopping...");
+            Vector3Int cellCoords = GameHelper.TopTileMap.LocalToCell(fw_reach);
+            StartChopping(cellCoords);
+        }
+        
+    }
+
+    public void TakeDamage(int damage) {
+        Debug.LogFormat("Ow... ({0} damage)", damage);
+        healthBar.Subtract(damage);
+        if (healthBar.Value == 0) {
+            GameHelper.LoseGame();
         }
     }
 
@@ -160,5 +242,10 @@ public class Guy : MonoBehaviour
     }
     public void Unfreeze() {
         frozen = false;
+    }
+
+    public void StartChopping(Vector3Int cellCoords){
+        chopTarget = cellCoords;
+        chopping = true;
     }
 }
