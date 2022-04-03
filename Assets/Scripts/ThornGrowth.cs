@@ -18,6 +18,7 @@ public class ThornGrowth : MonoBehaviour
     public List<TileBase> riverTiles;
     public List<TileBase> roadTiles;
     public List<TileBase> mountainTiles;
+    public Dictionary<Vector2Int, ParticleSystem> researchParticleEmitters;
     
     private int[,] groundMap;
     private int[,] growth;
@@ -35,13 +36,18 @@ public class ThornGrowth : MonoBehaviour
     private float roadSpeedMult = 1.5f;
     private float forestSpeedMult = 0.75f;
     private float mountainSpeedMult = 0.25f;
+    private float thornSpeedMultEnemy = 1.0f;
+    private float grassSpeedMultEnemy = 1.0f;
+    private float roadSpeedMultEnemy = 1.0f;
+    private float forestSpeedMultEnemy = 0.75f;
+    private float mountainSpeedMultEnemy = 0.25f;
     private int mapSize;
 
     private float growthTimer;
     private float spawnTimer;
 
     // Start is called before the first frame update
-    void Start()
+    async void Start()
     {
         mapSize = GameHelper.mapSize;
         growth = new int[mapSize, mapSize];
@@ -84,6 +90,7 @@ public class ThornGrowth : MonoBehaviour
 
         // get top map tile types
         int towns = 0;
+        researchParticleEmitters = new Dictionary<Vector2Int, ParticleSystem>{};
         for (int i=0; i < mapSize; i++){
             for (int j=0; j < mapSize; j++){
                 TileBase tile = GameHelper.TopTileMap.GetTile(new Vector3Int(i + offset.x, j + offset.y, 0));
@@ -91,6 +98,9 @@ public class ThornGrowth : MonoBehaviour
                     growth[i, j] = 2;
                     miniMap[i, j] = 5;
                     towns += 1;
+                    Vector3 position = GameHelper.TopTileMap.CellToLocal(new Vector3Int(i + offset.x, j + offset.y, 0)) + new Vector3(0.5f, 0.5f, 0);
+                    ParticleSystem ps = Instantiate(GameHelper.ResearchParticleEmitter, position, Quaternion.Euler(-90, 0, 0));
+                    researchParticleEmitters.Add(new Vector2Int(i, j), ps);
                 }
                 else if (mountainTiles.Contains(tile)){
                     growth[i, j] = 3;
@@ -144,6 +154,8 @@ public class ThornGrowth : MonoBehaviour
                     if (tile == townTile){
                         GameHelper.TopTileMap.SetTile(new Vector3Int(i + offset.x, j + offset.y, 0), ruinedTownTile);
                         GameHelper.gameManager.LoseTown();
+                        Destroy(researchParticleEmitters[new Vector2Int(i, j)].gameObject);
+                        researchParticleEmitters.Remove(new Vector2Int(i, j));
                         miniMap[i, j] = 7;
                     }
                     else if (mountainTiles.Contains(tile)){
@@ -302,23 +314,48 @@ public class ThornGrowth : MonoBehaviour
         return tile;
     }
 
-    public float SpeedMultiplier(Vector3 position) {
+    public float SpeedMultiplier(Vector3 position, bool enemy) {
         if (IsThorny(position)){
-            return thornSpeedMult;
+            if (enemy) {
+                return thornSpeedMultEnemy;
+            }
+            else {
+                return thornSpeedMult;
+            }
         }
         else if (mountainTiles.Contains(TopType(position))) {
-            return mountainSpeedMult;
+            if (enemy) {
+                return mountainSpeedMultEnemy;
+            }
+            else {
+                return mountainSpeedMult;
+            }
         }
         else {
             TileBase groundTile = GroundType(position);
             if (grassTiles.Contains(groundTile)) {
-                return grassSpeedMult;
+                if (enemy) {
+                    return grassSpeedMultEnemy;
+                }
+                else {
+                    return grassSpeedMult;
+                }
             }
             else if (forestTiles.Contains(groundTile)) {
-                return forestSpeedMult;
+                if (enemy) {
+                    return forestSpeedMultEnemy;
+                }
+                else {
+                    return forestSpeedMult;
+                }
             }
             else if (roadTiles.Contains(groundTile)) {
-                return roadSpeedMult;
+                if (enemy) {
+                    return roadSpeedMultEnemy;
+                }
+                else {
+                    return roadSpeedMult;
+                }
             }
             else {
                 Debug.LogFormat("Bad tile type for speed multiplier: {0}", groundTile);
@@ -331,9 +368,10 @@ public class ThornGrowth : MonoBehaviour
     public void SpawnEnemies() {        
         for (int i=0; i < mapSize; i++){
             for (int j=0; j < mapSize; j++){
-                if (growth[i, j] > 0) { // any overgrown tile
+                if (growth[i, j] == 1) { // any overgrown tile
                     if (Random.Range(0.0f, 1.0f) < perTileSpawnChance) {
-                        Instantiate(GameHelper.Zombie, GameHelper.TopTileMap.CellToLocal(new Vector3Int(i + offset.x, j + offset.y, 0)), Quaternion.identity);
+                        Zombie z = Instantiate(GameHelper.Zombie, GameHelper.TopTileMap.CellToLocal(new Vector3Int(i + offset.x, j + offset.y, 0)), Quaternion.identity);
+                        z.tag = GameHelper.Zombie.tag;
                     }
                 }
             }

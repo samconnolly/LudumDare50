@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
 {
     public Guy player;
     public Scroll scroll;
+    public SpriteCounter townCounter;
     public float scrollGenInterval;
     public int maxScrolls;
     public StatBar researchCounter;
@@ -15,6 +16,7 @@ public class GameManager : MonoBehaviour
     public int townResearchRate;
     public int collectableResearchRate;
     public int winScore;
+    public ParticleSystem researchParticleEmitter;
     private float researchTimer;
     private float scrolltimer;
     private int nScrolls;
@@ -26,10 +28,13 @@ public class GameManager : MonoBehaviour
 
     private int towns = 0;
 
+    private void Awake() {
+        GameHelper.gameManager = this;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
-        GameHelper.gameManager = this;
         thornGrowth = topTileMap.GetComponent<ThornGrowth>();
         researchCounter.SetMax(winScore);
     }
@@ -43,6 +48,9 @@ public class GameManager : MonoBehaviour
             if (researchTimer >= researchInterval) {
                 researchCounter.Add(towns * townResearchRate);
                 researchTimer = 0;
+                foreach (ParticleSystem ps in thornGrowth.researchParticleEmitters.Values) {
+                    ps.Emit(1);
+                }
             }
 
             if (researchCounter.Value >= winScore) {
@@ -62,7 +70,8 @@ public class GameManager : MonoBehaviour
         }
     }
     public void LoseTown(){
-        towns -= 1;      
+        towns -= 1;
+        townCounter.Change(-1);
         if (towns == 0) {
             GameHelper.LoseGame();
         }

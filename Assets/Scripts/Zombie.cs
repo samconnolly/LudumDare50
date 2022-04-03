@@ -14,6 +14,7 @@ public class Zombie : Character
     // Start is called before the first frame update
     protected override void Start()
     {
+        base.enemy = true;
         base.Start();
     }
 

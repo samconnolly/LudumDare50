@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Cinemachine;
 
 public class Guy : Character
 {
@@ -19,13 +20,16 @@ public class Guy : Character
     private Vector3Int chopTarget;
     private float chopTimer;
     private bool chopping;
+    private CinemachineImpulseSource impulseSource;
 
 
     // Start is called before the first frame update
     protected override void Start()
     {
+        base.enemy = false;
         base.Start();
         circleCollider = GetComponent<CircleCollider2D>();
+        impulseSource = GetComponent<CinemachineImpulseSource>();
     }
 
     // Update is called once per frame
@@ -87,17 +91,25 @@ public class Guy : Character
         }
 
         moveDir = new Vector3(0, 0, 0);
-        if (Input.GetKey(KeyCode.W)) {
-            moveDir += new Vector3(0, 1, 0);
-        }
-        if (Input.GetKey(KeyCode.S)) {
-            moveDir += new Vector3(0, -1, 0);
-        }
-        if (Input.GetKey(KeyCode.A)) {
-            moveDir += new Vector3(-1, 0, 0);
-        }
-        if (Input.GetKey(KeyCode.D)) {
-            moveDir += new Vector3(1, 0, 0);
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.S) ||
+            Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.A)) {
+            base.faceDir = new Vector3(0, 0, 0);
+            if (Input.GetKey(KeyCode.W)) {
+                moveDir += new Vector3(0, 1, 0);
+                base.faceDir += new Vector3(0, 1, 0);
+            }
+            if (Input.GetKey(KeyCode.S)) {
+                moveDir += new Vector3(0, -1, 0);
+                base.faceDir += new Vector3(0, -1, 0);
+            }
+            if (Input.GetKey(KeyCode.A)) {
+                moveDir += new Vector3(-1, 0, 0);
+                base.faceDir += new Vector3(-1, 0, 0);
+            }
+            if (Input.GetKey(KeyCode.D)) {
+                moveDir += new Vector3(1, 0, 0);
+                base.faceDir += new Vector3(1, 0, 0);
+            }
         }
 
         if (moveDir.magnitude > 0){
@@ -132,6 +144,7 @@ public class Guy : Character
 
     private void Attack(){
         Debug.Log("Attack");
+        impulseSource.GenerateImpulse();
         base.SetAnimation(AnimType.Attacking);
 
         ContactFilter2D contactFilter = new ContactFilter2D();
@@ -163,6 +176,7 @@ public class Guy : Character
     public void TakeDamage(int damage) {
         Debug.LogFormat("Ow... ({0} damage)", damage);
         healthBar.Subtract(damage);
+        impulseSource.GenerateImpulse();
         if (healthBar.Value == 0) {
             GameHelper.LoseGame();
         }

@@ -18,7 +18,7 @@ public enum Dir
 
 public class Character : MonoBehaviour
 {
-
+    protected bool enemy;
     public float moveSpeed;
     public Sprite[] standSpritesUp;
     public Sprite[] standSpritesDown;
@@ -104,7 +104,7 @@ public class Character : MonoBehaviour
     void UpdateMovement()
     {
         if (! frozen) {
-            speedMultiplier = GameHelper.Thorns.SpeedMultiplier(transform.position);
+            speedMultiplier = GameHelper.Thorns.SpeedMultiplier(transform.position, enemy);
             
             // prevent drifting
             if ((truePosition - transform.position).magnitude > posQuant){
@@ -134,6 +134,14 @@ public class Character : MonoBehaviour
             }
             else {
                 dir = Dir.Down; // should only be at the start when stationary
+            }
+            Debug.LogFormat("faceVec: {0}, dir: {1}", faceDir, dir);
+
+            if (moveDir.magnitude > 0 && currentAnimation == AnimType.Standing) {
+                SetAnimation(AnimType.Walking);
+            }
+            else if (moveDir.magnitude == 0 && currentAnimation == AnimType.Walking) {
+                SetAnimation(AnimType.Standing);
             }
         }
     }

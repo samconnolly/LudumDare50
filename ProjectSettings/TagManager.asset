@@ -4,10 +4,12 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Deadly
-  - Chi
-  - Bolt
-  - Thorn
+  - Zombie
+  - HP
+  - Research
+  - Town
+  - Scroll
+  - HouseCounter
   layers:
   - Default
   - TransparentFX

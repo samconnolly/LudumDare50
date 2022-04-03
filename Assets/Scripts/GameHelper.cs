@@ -14,7 +14,7 @@ public static class GameHelper
     public static bool victorious = false;
     public static bool defeated = false;
 
-    public static float frameRate = 2;
+    public static float frameRate = 10;
     
     public static int mapSize = 16;
 
@@ -41,6 +41,9 @@ public static class GameHelper
         get {return gameManager.thornTile;}
     }
 
+    public static ParticleSystem ResearchParticleEmitter {
+        get {return gameManager.researchParticleEmitter;}
+    }
     public static void QuitGame()
     {
         Application.Quit();
