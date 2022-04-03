@@ -3,75 +3,45 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-enum AnimType
+public class Guy : Character
 {
-   Standing,
-   Walking,
-   Attacking
-}
-
-public class Guy : MonoBehaviour
-{
-    public float moveSpeed;
-    public Sprite[] standSprites;
-    public Sprite[] walkSprites;
-    public Sprite[] attackSprites;
     public float reach;
     public float chopTime;
     public float thornDamageTime;
     public int thornDamage;
-    public HealthBar healthBar;
+    public StatBar healthBar;
     
 
-    private Vector3 moveDir;
-    private Vector3 faceDir;
-    private Quaternion rot;
-    private SpriteRenderer spriteRenderer;
-    private Sprite[] currentSprites;
-
-    private float frameTime = 1;
-    private int frame;
-    private float animTimer;
-    private AnimType currentAnimation;
-
     private CircleCollider2D circleCollider;
-
-    private Dictionary<AnimType, AnimType> animTransitions = new Dictionary<AnimType, AnimType>();
-    private bool moving;
     private bool inThorns;
     private float thornTimer;
 
-    private bool frozen;
     private Vector3Int chopTarget;
     private float chopTimer;
     private bool chopping;
 
 
     // Start is called before the first frame update
-    void Start()
+    protected override void Start()
     {
-       spriteRenderer = GetComponent<SpriteRenderer>();
-       circleCollider = GetComponent<CircleCollider2D>();
-
-       SetAnimation(AnimType.Standing);
-       animTransitions.Add(AnimType.Standing, AnimType.Standing);
-       animTransitions.Add(AnimType.Walking, AnimType.Walking);
-       animTransitions.Add(AnimType.Attacking, AnimType.Standing);
+        base.Start();
+        circleCollider = GetComponent<CircleCollider2D>();
     }
 
     // Update is called once per frame
-    void Update()
+    protected override void Update()
     {
-        UpdateMovement();
-        UpdateAttack();
-        UpdateAnimation();
-        UpdateChopping();
-        UpdateThornDamage();
+        if (GameHelper.gameRunning) {
+            UpdateControl();
+            UpdateChopping();
+            UpdateThornDamage();
+        }
+        base.Update();
     }
     void UpdateChopping()
     {
         
-        if (Input.GetKey(KeyCode.Space) & ! moving){
+        if (Input.GetKey(KeyCode.Space) & ! base.moving){
             if (chopping){
                 chopTimer += Time.deltaTime;
                 if (chopTimer >= chopTime) {
@@ -109,41 +79,13 @@ public class Guy : MonoBehaviour
         }
     }
 
-    void UpdateAnimation()
-    {
-        animTimer += Time.deltaTime;
-        if (animTimer >= frameTime) {
-            frame += 1;
-            if (frame >= currentSprites.Length) {
-                frame = 0;
-                SetAnimation(animTransitions[currentAnimation]);
-            }
-            spriteRenderer.sprite = currentSprites[frame];
-            animTimer = 0;
-        }
-    }
+    void UpdateControl()
+    {   
 
-    private void SetAnimation(AnimType animType) {
-        // Debug.LogFormat("Set anim: {0}", animType);
-        currentAnimation = animType;
-        switch (animType){
-            case AnimType.Standing:
-                currentSprites = standSprites;
-                break;
-            case AnimType.Walking:
-                currentSprites = walkSprites;
-                break;
-            case AnimType.Attacking:
-                currentSprites = attackSprites;
-                break;
+        if (Input.GetKeyDown(KeyCode.Space)) {
+            Attack();
         }
-        frame = 0;
-        spriteRenderer.sprite = currentSprites[frame];
-        animTimer = 0;        
-    }
-    
-    void UpdateMovement()
-    {        
+
         moveDir = new Vector3(0, 0, 0);
         if (Input.GetKey(KeyCode.W)) {
             moveDir += new Vector3(0, 1, 0);
@@ -158,7 +100,6 @@ public class Guy : MonoBehaviour
             moveDir += new Vector3(1, 0, 0);
         }
 
-        // TODO ANIMTAION
         if (moveDir.magnitude > 0){
             moving = true;
         }
@@ -167,41 +108,31 @@ public class Guy : MonoBehaviour
         }
         moveDir.Normalize();
 
-        faceDir = new Vector3(0, 0, 0);
-        if (Input.GetKey(KeyCode.UpArrow)) {
-            faceDir += new Vector3(0, 1, 0);
-        }
-        if (Input.GetKey(KeyCode.DownArrow)) {
-            faceDir += new Vector3(0, -1, 0);
-        }
-        if (Input.GetKey(KeyCode.LeftArrow)) {
-            faceDir += new Vector3(-1, 0, 0);
-        }
-        if (Input.GetKey(KeyCode.RightArrow)) {
-            faceDir += new Vector3(1, 0, 0);
+        if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow) ||
+            Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.LeftArrow)) {
+            base.faceDir = new Vector3(0, 0, 0);
+            if (Input.GetKey(KeyCode.UpArrow)) {
+                base.faceDir += new Vector3(0, 1, 0);
+            }
+            if (Input.GetKey(KeyCode.DownArrow)) {
+                base.faceDir += new Vector3(0, -1, 0);
+            }
+            if (Input.GetKey(KeyCode.LeftArrow)) {
+                base.faceDir += new Vector3(-1, 0, 0);
+            }
+            if (Input.GetKey(KeyCode.RightArrow)) {
+                base.faceDir += new Vector3(1, 0, 0);
+            }
         }
 
-        if (faceDir.magnitude > 0){
-            rot = Quaternion.FromToRotation(new Vector3(0, 1, 0), faceDir);
-        }
-
-        if (! frozen) {
-            float speedMultiplier = GameHelper.Thorns.SpeedMultiplier(transform.position);
-            transform.position += moveDir * moveSpeed * speedMultiplier * 0.01f;  // scaling to make 1 reasonable
-            transform.rotation = rot;
-        }
-    }
-
-    private void UpdateAttack() {
-        
-        if (Input.GetKeyDown(KeyCode.Space)) {
-            Attack();
-        }
+        // if (faceDir.magnitude > 0){
+        //     rot = Quaternion.FromToRotation(new Vector3(0, 1, 0), faceDir);
+        // }
     }
 
     private void Attack(){
         Debug.Log("Attack");
-        SetAnimation(AnimType.Attacking);
+        base.SetAnimation(AnimType.Attacking);
 
         ContactFilter2D contactFilter = new ContactFilter2D();
         Collider2D[] circleOverlaps = new Collider2D[5];
@@ -235,13 +166,6 @@ public class Guy : MonoBehaviour
         if (healthBar.Value == 0) {
             GameHelper.LoseGame();
         }
-    }
-
-    public void Freeze() {
-        frozen = true;
-    }
-    public void Unfreeze() {
-        frozen = false;
     }
 
     public void StartChopping(Vector3Int cellCoords){

@@ -6,6 +6,8 @@ using UnityEngine.Tilemaps;
 public class ThornGrowth : MonoBehaviour
 {
     public float growthInterval;
+    public float spawnInterval;
+    public float perTileSpawnChance;
     public TileBase thornTile;
     public TileBase townTile;
     public TileBase ruinedTownTile;
@@ -36,6 +38,7 @@ public class ThornGrowth : MonoBehaviour
     private int mapSize;
 
     private float growthTimer;
+    private float spawnTimer;
 
     // Start is called before the first frame update
     void Start()
@@ -111,7 +114,10 @@ public class ThornGrowth : MonoBehaviour
 
     void Update()
     {
-        UpdateGrowth(); 
+        if (GameHelper.gameRunning) {
+            UpdateGrowth();
+            UpdateSpawning();
+        }
     }
 
     private void UpdateGrowth() {
@@ -120,6 +126,13 @@ public class ThornGrowth : MonoBehaviour
             GenerateGrowth();
             ApplyNewGrowth();
             growthTimer = 0;
+        }
+    }
+    private void UpdateSpawning() {
+        spawnTimer += Time.deltaTime;
+        if (spawnTimer >= spawnInterval) {
+            SpawnEnemies();
+            spawnTimer = 0;
         }
     }
 
@@ -308,10 +321,22 @@ public class ThornGrowth : MonoBehaviour
                 return roadSpeedMult;
             }
             else {
-                Debug.Log("Bad tile type for speed multiplier");
+                Debug.LogFormat("Bad tile type for speed multiplier: {0}", groundTile);
                 return 1.0f;
             }
         }
         
+    }
+
+    public void SpawnEnemies() {        
+        for (int i=0; i < mapSize; i++){
+            for (int j=0; j < mapSize; j++){
+                if (growth[i, j] > 0) { // any overgrown tile
+                    if (Random.Range(0.0f, 1.0f) < perTileSpawnChance) {
+                        Instantiate(GameHelper.Zombie, GameHelper.TopTileMap.CellToLocal(new Vector3Int(i + offset.x, j + offset.y, 0)), Quaternion.identity);
+                    }
+                }
+            }
+        }
     }
 }

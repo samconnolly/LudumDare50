@@ -5,10 +5,12 @@ using UnityEngine.Tilemaps;
 
 public class GameManager : MonoBehaviour
 {
+    public Guy player;
     public Scroll scroll;
     public float scrollGenInterval;
     public int maxScrolls;
-    public Counter researchCounter;
+    public StatBar researchCounter;
+    public Zombie zombie;
     public float researchInterval;
     public int townResearchRate;
     public int collectableResearchRate;
@@ -29,37 +31,40 @@ public class GameManager : MonoBehaviour
     {
         GameHelper.gameManager = this;
         thornGrowth = topTileMap.GetComponent<ThornGrowth>();
+        researchCounter.SetMax(winScore);
     }
 
     // Update is called once per frame
     void Update()
     {
-        researchTimer += Time.deltaTime;
+        if (GameHelper.gameRunning) {
+            researchTimer += Time.deltaTime;
 
-        if (researchTimer >= researchInterval) {
-            researchCounter.Add(towns * townResearchRate);
-            researchTimer = 0;
-        }
-
-        if (researchCounter.Value >= winScore) {
-            WinGame();
-        }
-
-        scrolltimer += Time.deltaTime;
-
-        if (scrolltimer >= scrollGenInterval) {
-            if (nScrolls < maxScrolls) {
-                Vector3 position = thornGrowth.RandomAccessiblePosition();
-                Instantiate(scroll, position, Quaternion.identity);
-                nScrolls += 1;
+            if (researchTimer >= researchInterval) {
+                researchCounter.Add(towns * townResearchRate);
+                researchTimer = 0;
             }
-            scrolltimer = 0;
+
+            if (researchCounter.Value >= winScore) {
+                GameHelper.WinGame();
+            }
+
+            scrolltimer += Time.deltaTime;
+
+            if (scrolltimer >= scrollGenInterval) {
+                if (nScrolls < maxScrolls) {
+                    Vector3 position = thornGrowth.RandomAccessiblePosition();
+                    Instantiate(scroll, position, Quaternion.identity);
+                    nScrolls += 1;
+                }
+                scrolltimer = 0;
+            }
         }
     }
     public void LoseTown(){
         towns -= 1;      
         if (towns == 0) {
-            LoseGame();
+            GameHelper.LoseGame();
         }
     }
     public int Towns{
@@ -71,10 +76,4 @@ public class GameManager : MonoBehaviour
         nScrolls -= 1;      
     }
 
-    public void LoseGame(){
-        GameHelper.LoadMenuScene(); // lose
-    }
-    public void WinGame(){
-        GameHelper.LoadMenuScene(); // win
-    }
 }

@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class HealthBar : MonoBehaviour
+public class StatBar : MonoBehaviour
 {
     public float maxValue;
+    public float startValue;
     private float value;
     private Image image;
     private float width;
@@ -14,10 +15,14 @@ public class HealthBar : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        value = maxValue;
         image = GetComponent<Image>();
         width = image.rectTransform.rect.width;
         pos = image.rectTransform.position;
+        SetValue(startValue);
+    }
+
+    public void SetMax(int max){
+        maxValue = max;
     }
 
     public int Value{
@@ -34,6 +39,13 @@ public class HealthBar : MonoBehaviour
         float newValue = value - sub;
         if (newValue < 0) {
             newValue = 0;
+        }
+        SetValue(newValue);
+    }
+    public void Add(float add) {
+        float newValue = value + add;
+        if (newValue > maxValue) {
+            newValue = maxValue;
         }
         SetValue(newValue);
     }
